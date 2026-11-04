@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timer Cubo</title>
+    <link rel="manifest" href="./manifest.json">
+    <style>
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            user-select: none;
+        }
+        #instructions {
+            font-size: 1.2rem;
+            color: #888;
+            margin-bottom: 2rem;
+            text-align: center;
+            line-height: 1.6;
+        }
+        #timer {
+            font-size: 8rem;
+            font-weight: bold;
+            font-variant-numeric: tabular-nums;
+            transition: color 0.1s ease;
+        }
+        #timer.ready {
+            color: #00ff00;
+        }
+        #timer.holding {
+            color: #ff3333;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="instructions">
+        <strong>Timer Cubo</strong><br>
+        Segure ESPAÇO para preparar. Solte para iniciar.<br>
+        Aperte qualquer tecla para parar.
+    </div>
+    
+    <div id="timer">0.00</div>
+
+    <script>
+        let startTime = 0;
+        let elapsedTime = 0;
+        let timerInterval = null;
+        let timerState = "stopped"; // stopped, holding, ready, running
+        let holdTimeout = null;
+
+        const timerDisplay = document.getElementById("timer");
+
+        function formatTime(ms) {
+            let centiseconds = Math.floor((ms % 1000) / 10);
+            let totalSeconds = Math.floor(ms / 1000);
+            
+            let minutes = Math.floor(totalSeconds / 60);
+            let seconds = totalSeconds % 60;
+
+            let strCenti = centiseconds.toString().padStart(2, '0');
+            let strSec = seconds.toString().padStart(2, '0');
+
+            if (minutes > 0) {
+                return `${minutes}:${strSec}.${strCenti}`;
+            }
+            
+            // Se for menor que 60 segundos, mostra apenas os segundos sem o zero à esquerda se for < 10
+            return `${seconds}.${strCenti}`;
+        }
+
+        function updateDisplay() {
+            timerDisplay.textContent = formatTime(elapsedTime);
+        }
+
+        function startTimer() {
+            startTime = performance.now() - elapsedTime;
+            timerInterval = requestAnimationFrame(runTimer);
+        }
+
+        function runTimer() {
+            if (timerState === "running") {
+                elapsedTime = performance.now() - startTime;
+                updateDisplay();
+                timerInterval = requestAnimationFrame(runTimer);
+            }
+        }
+
+        function stopTimer() {
+            cancelAnimationFrame(timerInterval);
+            timerState = "stopped";
+            updateDisplay();
+        }
+
+        window.addEventListener("keydown", (e) => {
+            if (e.code === "Space") {
+                e.preventDefault();
+                
+                if (timerState === "running") {
+                    timerState = "stopped";
+                    stopTimer();
+                    return;
+                }
+                
+                if (timerState === "stopped") {
+                    timerState = "holding";
+                    timerDisplay.classList.add("holding");
+                    
+                    // Precisa segurar por pelo menos 500ms para ficar verde (pronto)
+                    if (!holdTimeout) {
+                        holdTimeout = setTimeout(() => {
+                            if (timerState === "holding") {
+                                timerState = "ready";
+                                timerDisplay.classList.remove("holding");
+                                timerDisplay.classList.add("ready");
+                                timerDisplay.textContent = "0.00";
+                            }
+                        }, 500);
+                    }
+                }
+            } else {
+                // Qualquer outra tecla para o timer se estiver rodando
+                if (timerState === "running") {
+                    timerState = "stopped";
+                    stopTimer();
+                }
+            }
+        });
+
+        window.addEventListener("keyup", (e) => {
+            if (e.code === "Space") {
+                e.preventDefault();
+                clearTimeout(holdTimeout);
+                holdTimeout = null;
+
+                if (timerState === "ready") {
+                    timerState = "running";
+                    timerDisplay.classList.remove("ready");
+                    elapsedTime = 0;
+                    startTimer();
+                } else if (timerState === "holding") {
+                    timerState = "stopped";
+                    timerDisplay.classList.remove("holding");
+                }
+            }
+        });
+
+                if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('Service Worker registrado com sucesso!', reg))
+                    .catch(err => console.error('Erro ao registrar Service Worker:', err));
+            });
+        }
+
+    </script>
+</body>
+</html>
