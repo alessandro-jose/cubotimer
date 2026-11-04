@@ -1,7 +1,7 @@
 {
   "name": "Timer de Cubo Magico",
   "short_name": "TimerCubo",
-  "start_url": "./timer (1).html",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#121212",
   "theme_color": "#121212",
